@@ -29,6 +29,7 @@ public class SwiftyStoreKit {
     private let productsInfoController: ProductsInfoController
 
     fileprivate let paymentQueueController: PaymentQueueController
+    fileprivate var receiptRefreshRequest: InAppReceiptRefreshRequest?
 
     fileprivate let receiptVerificator: InAppReceiptVerificator
 
@@ -81,6 +82,24 @@ public class SwiftyStoreKit {
             let results = self.processRestoreResults(results)
             completion(results)
         })
+    }
+    
+    func refreshReceipt(_ receiptProperties: [String : Any]? = nil, completion: @escaping (RefreshReceiptResult) -> Void) {
+        receiptRefreshRequest = InAppReceiptRefreshRequest.refresh(receiptProperties) { result in
+            
+            self.receiptRefreshRequest = nil
+            
+            switch result {
+            case .success:
+                if let appStoreReceiptData = InAppReceipt.appStoreReceiptData {
+                    completion(.success(receiptData: appStoreReceiptData))
+                } else {
+                    completion(.error(error: ReceiptError.noReceiptData))
+                }
+            case .error(let e):
+                completion(.error(error: e))
+            }
+        }
     }
 
     fileprivate func completeTransactions(atomically: Bool = true, completion: @escaping ([Purchase]) -> Void) {
@@ -203,6 +222,12 @@ extension SwiftyStoreKit {
     public class func finishTransaction(_ transaction: PaymentTransaction) {
 
         sharedInstance.finishTransaction(transaction)
+    }
+    
+    // After verifying receive and have `ReceiptError.NoReceiptData`, refresh receipt using this method
+    public class func refreshReceipt(_ receiptProperties: [String : Any]? = nil, completion: @escaping (RefreshReceiptResult) -> Void) {
+        
+        sharedInstance.refreshReceipt(receiptProperties, completion: completion)
     }
     
     /**

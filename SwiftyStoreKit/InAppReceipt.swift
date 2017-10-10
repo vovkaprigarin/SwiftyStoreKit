@@ -80,6 +80,22 @@ extension ReceiptItem {
 // MARK: - receipt mangement
 internal class InAppReceipt {
 
+    static var appStoreReceiptUrl: URL? {
+        return Bundle.main.appStoreReceiptURL
+    }
+    
+    static var appStoreReceiptData: Data? {
+        guard let receiptDataURL = appStoreReceiptUrl, let data = try? Data(contentsOf: receiptDataURL) else {
+            return nil
+        }
+        return data
+    }
+    
+    // The base64 encoded receipt data.
+    static var appStoreReceiptBase64Encoded: String? {
+        return appStoreReceiptData?.base64EncodedString(options: [])
+    }
+    
     /**
      *  Verify the purchase of a Consumable or NonConsumable product in a receipt
      *  - Parameter productId: the product id of the purchase to verify
